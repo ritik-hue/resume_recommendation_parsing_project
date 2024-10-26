@@ -1,7 +1,7 @@
 PyPDF2
 flask
 gunicorn
-sklearn
+scikit-learn
 pandas
 numpy
 matplotlib
