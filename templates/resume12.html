@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Recommendation System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Body and Fonts */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(to right, #f5f7fa, #c3cfe2);
+            color: #333;
+        }
+
+        /* Navigation Bar */
+        nav {
+            background-color: #013a5c;
+            padding: 15px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav h2 {
+            font-weight: 600;
+        }
+
+        nav ul {
+            list-style-type: none;
+            display: flex;
+            gap: 15px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        /* Container */
+        .container {
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Form and File Upload Styling */
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            border: 2px dashed #ddd;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        input[type="submit"] {
+            padding: 12px 25px;
+            background-color: #ff6347;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #e55347;
+            transform: translateY(-3px);
+            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            display: none;
+            margin-top: 15px;
+        }
+
+        .progress-bar {
+            height: 10px;
+            width: 0;
+            background: #4CAF50;
+            transition: width 0.3s ease;
+        }
+
+        /* Modal for Results */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .modal h2 {
+            margin-bottom: 15px;
+        }
+
+        .modal p {
+            margin: 10px 0;
+            font-size: 1rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 15px;
+            background-color: #013a5c;
+            color: white;
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation Bar -->
+    <nav>
+        <h2>Resume Screening System</h2>
+        <ul>
+            <li><a href="#">Home</a></li>
+            <li><a href="#">Upload Resume</a></li>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Contact</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <h2>Upload Your Resume</h2>
+        <form action="/pred" method="post" enctype="multipart/form-data" onsubmit="showProgressBar()">
+            <input type="file" name="resume" accept=".pdf, .txt" required>
+            <input type="submit" value="Submit">
+
+            <!-- Progress Bar -->
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </form>
+
+        {% if message %}
+        <p class="text-center">{{ message }}</p>
+        {% endif %}
+
+        {% if predicted_category %}
+        <div class="modal" id="resultModal">
+            <div class="modal-content">
+                <h2>Results</h2>
+                <p><strong>Category:</strong> {{ predicted_category }}</p>
+                <p><strong>Recommended Job:</strong> {{ recommended_job }}</p>
+                <h3>Extracted Information</h3>
+                <p><strong>Name:</strong> {{ name }}</p>
+                <p><strong>Phone:</strong> {{ phone }}</p>
+                <p><strong>Email:</strong> {{ email }}</p>
+                {% if extracted_skills %}
+                <p><strong>Skills:</strong></p>
+                <ul>
+                    {% for skill in extracted_skills %}
+                    <li>{{ skill }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                <button onclick="closeModal()">Close</button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        &copy; 2024 Resume Screening System | All Rights Reserved
+    </footer>
+
+    <script>
+        // Show the progress bar when form is submitted
+        function showProgressBar() {
+            document.querySelector('.progress-container').style.display = 'block';
+            const progressBar = document.getElementById('progressBar');
+            let width = 0;
+            const interval = setInterval(() => {
+                if (width >= 100) {
+                    clearInterval(interval);
+                } else {
+                    width += 10;
+                    progressBar.style.width = width + '%';
+                }
+            }, 200);
+        }
+
+        // Open and Close Modal
+        function closeModal() {
+            document.getElementById('resultModal').style.display = 'none';
+        }
+        {% if predicted_category %}
+        document.getElementById('resultModal').style.display = 'flex';
+        {% endif %}
+    </script>
+</body>
+
+</html>
